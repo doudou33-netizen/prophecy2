@@ -171,15 +171,17 @@
       ],
     };
 
-    const directions = ['up', 'right', 'down', 'left'];
     let currentCategory = null;
     let revealed = false;
     let faceDown = false;
+    let readyToDetect = false; // 表向きに戻った後の待機フラグ
+    let detectTimer = null;
 
     function selectCategory(cat) {
       currentCategory = cat;
       revealed = false;
       faceDown = false;
+      readyToDetect = false;
       document.getElementById('select-screen').style.display = 'none';
       document.getElementById('waiting').style.display = 'flex';
     }
@@ -201,22 +203,43 @@
     function reset() {
       revealed = false;
       faceDown = false;
+      readyToDetect = false;
+      if (detectTimer) clearTimeout(detectTimer);
       currentCategory = null;
       document.getElementById('result').style.display = 'none';
       document.getElementById('waiting').style.display = 'none';
       document.getElementById('select-screen').style.display = 'flex';
     }
 
-    // 傾き検知（カテゴリ選択後のみ有効）
+    // 傾き検知
     window.addEventListener('deviceorientation', function(e) {
       if (revealed || !currentCategory) return;
 
       const beta  = e.beta;
       const gamma = e.gamma;
 
+      // 裏向き検知
       const isDown = Math.abs(beta) > 150 || beta < -150;
-      if (isDown) { faceDown = true; return; }
-      if (!faceDown) return;
+      if (isDown) {
+        faceDown = true;
+        readyToDetect = false;
+        if (detectTimer) clearTimeout(detectTimer);
+        return;
+      }
+
+      // 裏向きになった後、表向きに戻ったら1秒待ってから検知開始
+      if (faceDown && !readyToDetect) {
+        const isFaceUp = Math.abs(beta) < 30 && Math.abs(gamma) < 30;
+        if (isFaceUp) {
+          detectTimer = setTimeout(() => {
+            readyToDetect = true;
+          }, 1000); // 1秒待機
+          faceDown = false;
+        }
+        return;
+      }
+
+      if (!readyToDetect) return;
 
       const threshold = 15;
 
@@ -236,7 +259,7 @@
     let lastShake = 0;
 
     window.addEventListener('devicemotion', function(e) {
-      if (!revealed) return; // 結果表示後のみ有効
+      if (!revealed) return;
 
       const acc = e.accelerationIncludingGravity;
       if (!acc) return;
