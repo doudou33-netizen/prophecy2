@@ -17,7 +17,6 @@
       overflow: hidden;
     }
 
-    /* カテゴリ選択画面 */
     #select-screen {
       display: flex;
       flex-direction: column;
@@ -57,7 +56,6 @@
       background: #c9a84c22;
     }
 
-    /* 待機画面 */
     #waiting {
       display: none;
       flex-direction: column;
@@ -73,7 +71,6 @@
       letter-spacing: 6px;
     }
 
-    /* 結果画面 */
     #result {
       display: none;
       flex-direction: column;
@@ -126,22 +123,19 @@
 </head>
 <body>
 
-  <!-- カテゴリ選択画面 -->
   <div id="select-screen">
     <h1>予　言</h1>
     <p>カテゴリを選んでください</p>
     <button class="cat-btn" onclick="selectCategory('mark')">♦ マーク</button>
     <button class="cat-btn" onclick="selectCategory('number')">１ 数字</button>
     <button class="cat-btn" onclick="selectCategory('color')">● 色</button>
-    <button class="cat-btn" onclick="selectCategory('izakaya')">🍶 居酒屋</button>
+    <button class="cat-btn" onclick="selectCategory('izakaya')">🍺 居酒屋</button>
   </div>
 
-  <!-- 待機画面 -->
   <div id="waiting">
     <h1>予　言</h1>
   </div>
 
-  <!-- 結果画面 -->
   <div id="result">
     <div class="gold-line"></div>
     <div class="suit" id="suitSymbol"></div>
@@ -158,10 +152,10 @@
         { symbol: '♠', name: 'スペード',   color: 'black' },
       ],
       number: [
-        { symbol: '１', name: '',  color: 'black' },
-        { symbol: '２', name: '',  color: 'black' },
-        { symbol: '３', name: '',  color: 'black' },
-        { symbol: '４', name: '',  color: 'black' },
+        { symbol: '１', name: '', color: 'black' },
+        { symbol: '２', name: '', color: 'black' },
+        { symbol: '３', name: '', color: 'black' },
+        { symbol: '４', name: '', color: 'black' },
       ],
       color: [
         { symbol: '●', name: '赤', color: 'red'   },
@@ -171,13 +165,12 @@
       ],
       izakaya: [
         { symbol: '🍽', name: '皿',       color: 'black' },
-        { symbol: '🥛', name: 'コップ',   color: 'black' },
+        { symbol: '🍺', name: 'コップ',   color: 'black' },
         { symbol: '🥢', name: '箸',       color: 'black' },
         { symbol: '🧻', name: 'おしぼり', color: 'black' },
       ],
     };
 
-    // 上・右・下・左の順
     const directions = ['up', 'right', 'down', 'left'];
     let currentCategory = null;
     let revealed = false;
@@ -185,10 +178,10 @@
 
     function selectCategory(cat) {
       currentCategory = cat;
-      document.getElementById('select-screen').style.display = 'none';
-      document.getElementById('waiting').style.display = 'flex';
       revealed = false;
       faceDown = false;
+      document.getElementById('select-screen').style.display = 'none';
+      document.getElementById('waiting').style.display = 'flex';
     }
 
     function showResult(index) {
@@ -214,7 +207,7 @@
       document.getElementById('select-screen').style.display = 'flex';
     }
 
-    // 傾き検知
+    // 傾き検知（カテゴリ選択後のみ有効）
     window.addEventListener('deviceorientation', function(e) {
       if (revealed || !currentCategory) return;
 
@@ -228,22 +221,23 @@
       const threshold = 15;
 
       if (beta > threshold && Math.abs(gamma) < 45) {
-        showResult(0); // 上 → 1番目
+        showResult(0); // 上
       } else if (gamma > threshold && Math.abs(beta) < 45) {
-        showResult(1); // 右 → 2番目
+        showResult(1); // 右
       } else if (beta < -threshold && Math.abs(gamma) < 45) {
-        showResult(2); // 下 → 3番目
+        showResult(2); // 下
       } else if (gamma < -threshold && Math.abs(beta) < 45) {
-        showResult(3); // 左 → 4番目
+        showResult(3); // 左
       }
     });
 
-    // シェイク検知
+    // シェイク検知（結果表示後のみ有効）
     let lastX, lastY, lastZ;
     let lastShake = 0;
 
     window.addEventListener('devicemotion', function(e) {
-      if (!revealed) return;
+      if (!revealed) return; // 結果表示後のみ有効
+
       const acc = e.accelerationIncludingGravity;
       if (!acc) return;
 
@@ -281,7 +275,7 @@
           <button class="cat-btn" onclick="selectCategory('mark')">♦ マーク</button>
           <button class="cat-btn" onclick="selectCategory('number')">１ 数字</button>
           <button class="cat-btn" onclick="selectCategory('color')">● 色</button>
-          <button class="cat-btn" onclick="selectCategory('izakaya')">🍶 居酒屋</button>
+          <button class="cat-btn" onclick="selectCategory('izakaya')">🍺 居酒屋</button>
         `;
       });
     }
