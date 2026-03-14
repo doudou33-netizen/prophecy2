@@ -174,11 +174,13 @@
     let currentCategory = null;
     let revealed = false;
     let faceDown = false;
+    let started = false; // カテゴリ選択後はtrueになり選択画面に戻れない
 
     function selectCategory(cat) {
       currentCategory = cat;
       revealed = false;
       faceDown = false;
+      started = true; // 一度選択したら選択画面には戻れない
       document.getElementById('select-screen').style.display = 'none';
       document.getElementById('waiting').style.display = 'flex';
     }
@@ -198,8 +200,10 @@
     }
 
     function reset() {
+      // シェイクでリセット時のみ選択画面に戻る
       revealed = false;
       faceDown = false;
+      started = false;
       currentCategory = null;
       document.getElementById('result').style.display = 'none';
       document.getElementById('waiting').style.display = 'none';
@@ -207,31 +211,33 @@
     }
 
     window.addEventListener('deviceorientation', function(e) {
-      if (revealed || !currentCategory) return;
+      // 未選択 or 結果表示済みは無視
+      if (!started || revealed) return;
 
       const beta  = e.beta;
       const gamma = e.gamma;
 
-      // 裏向き検知：より敏感に（100度以上傾いたら裏向きとみなす）
+      // 裏向き検知（敏感：100度以上）
       const isDown = beta > 100 || beta < -100;
       if (isDown) {
         faceDown = true;
         return;
       }
 
+      // 裏向きを確認していない場合は傾き検知しない
       if (!faceDown) return;
 
-      // 表向きに戻った際に即座に傾き検知
+      // 傾き検知（即座に反応）
       const threshold = 15;
 
       if (beta > threshold && Math.abs(gamma) < 45) {
-        showResult(0); // 上 → 1番目
+        showResult(0); // 上
       } else if (gamma > threshold && Math.abs(beta) < 45) {
-        showResult(1); // 右 → 2番目
+        showResult(1); // 右
       } else if (beta < -threshold && Math.abs(gamma) < 45) {
-        showResult(2); // 下 → 3番目
+        showResult(2); // 下
       } else if (gamma < -threshold && Math.abs(beta) < 45) {
-        showResult(3); // 左 → 4番目
+        showResult(3); // 左
       }
     });
 
@@ -240,7 +246,7 @@
     let lastShake = 0;
 
     window.addEventListener('devicemotion', function(e) {
-      if (!revealed) return;
+      if (!revealed) return; // 結果表示後のみ
 
       const acc = e.accelerationIncludingGravity;
       if (!acc) return;
