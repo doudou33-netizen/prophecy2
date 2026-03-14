@@ -174,14 +174,11 @@
     let currentCategory = null;
     let revealed = false;
     let faceDown = false;
-    let readyToDetect = false; // 表向きに戻った後の待機フラグ
-    let detectTimer = null;
 
     function selectCategory(cat) {
       currentCategory = cat;
       revealed = false;
       faceDown = false;
-      readyToDetect = false;
       document.getElementById('select-screen').style.display = 'none';
       document.getElementById('waiting').style.display = 'flex';
     }
@@ -203,54 +200,38 @@
     function reset() {
       revealed = false;
       faceDown = false;
-      readyToDetect = false;
-      if (detectTimer) clearTimeout(detectTimer);
       currentCategory = null;
       document.getElementById('result').style.display = 'none';
       document.getElementById('waiting').style.display = 'none';
       document.getElementById('select-screen').style.display = 'flex';
     }
 
-    // 傾き検知
     window.addEventListener('deviceorientation', function(e) {
       if (revealed || !currentCategory) return;
 
       const beta  = e.beta;
       const gamma = e.gamma;
 
-      // 裏向き検知
-      const isDown = Math.abs(beta) > 150 || beta < -150;
+      // 裏向き検知：より敏感に（100度以上傾いたら裏向きとみなす）
+      const isDown = beta > 100 || beta < -100;
       if (isDown) {
         faceDown = true;
-        readyToDetect = false;
-        if (detectTimer) clearTimeout(detectTimer);
         return;
       }
 
-      // 裏向きになった後、表向きに戻ったら1秒待ってから検知開始
-      if (faceDown && !readyToDetect) {
-        const isFaceUp = Math.abs(beta) < 30 && Math.abs(gamma) < 30;
-        if (isFaceUp) {
-          detectTimer = setTimeout(() => {
-            readyToDetect = true;
-          }, 1000); // 1秒待機
-          faceDown = false;
-        }
-        return;
-      }
+      if (!faceDown) return;
 
-      if (!readyToDetect) return;
-
+      // 表向きに戻った際に即座に傾き検知
       const threshold = 15;
 
       if (beta > threshold && Math.abs(gamma) < 45) {
-        showResult(0); // 上
+        showResult(0); // 上 → 1番目
       } else if (gamma > threshold && Math.abs(beta) < 45) {
-        showResult(1); // 右
+        showResult(1); // 右 → 2番目
       } else if (beta < -threshold && Math.abs(gamma) < 45) {
-        showResult(2); // 下
+        showResult(2); // 下 → 3番目
       } else if (gamma < -threshold && Math.abs(beta) < 45) {
-        showResult(3); // 左
+        showResult(3); // 左 → 4番目
       }
     });
 
