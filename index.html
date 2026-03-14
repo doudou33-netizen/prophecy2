@@ -175,13 +175,13 @@
     let currentCategory = null;
     let revealed = false;
     let faceDown = false;
-    let started = false; // カテゴリ選択後はtrueになり選択画面に戻れない
+    let started = false;
 
     function selectCategory(cat) {
       currentCategory = cat;
       revealed = false;
       faceDown = false;
-      started = true; // 一度選択したら選択画面には戻れない
+      started = true;
       document.getElementById('select-screen').style.display = 'none';
       document.getElementById('waiting').style.display = 'flex';
     }
@@ -201,7 +201,6 @@
     }
 
     function reset() {
-      // シェイクでリセット時のみ選択画面に戻る
       revealed = false;
       faceDown = false;
       started = false;
@@ -211,34 +210,44 @@
       document.getElementById('select-screen').style.display = 'flex';
     }
 
+    // 裏向き状態でのbeta/gamma基準値
+    // 裏向き時：betaは約170 or -170付近、gammaは約0
+    // 裏向きから各方向に30度傾けた時の検知
+
     window.addEventListener('deviceorientation', function(e) {
-      // 未選択 or 結果表示済みは無視
       if (!started || revealed) return;
 
-      const beta  = e.beta;
-      const gamma = e.gamma;
+      const beta  = e.beta;  // 前後 -180〜180
+      const gamma = e.gamma; // 左右 -90〜90
 
-      // 裏向き検知（敏感：100度以上）
+      // 裏向き検知（beta が 100度以上）
       const isDown = beta > 100 || beta < -100;
       if (isDown) {
         faceDown = true;
         return;
       }
 
-      // 裏向きを確認していない場合は傾き検知しない
       if (!faceDown) return;
 
-      // 傾き検知（即座に反応）
-      const threshold = 15;
+      // 裏向き状態（beta≒180 or -180）から各方向に30度傾いた状態を検知
+      // 裏向きから上側を持ち上げる → betaが150〜100の範囲で減少してくる
+      // ここでは裏向き基準から30度傾いた角度で検知
 
-      if (beta > threshold && Math.abs(gamma) < 45) {
-        showResult(0); // 上
-      } else if (gamma > threshold && Math.abs(beta) < 45) {
-        showResult(1); // 右
-      } else if (beta < -threshold && Math.abs(gamma) < 45) {
-        showResult(2); // 下
-      } else if (gamma < -threshold && Math.abs(beta) < 45) {
-        showResult(3); // 左
+      const threshold = 30; // 30度傾いたら確定
+
+      // 裏向きからの傾き検知
+      // gamma で左右、betaの変化で前後を検知
+      if (Math.abs(gamma) < 30) {
+        // 左右の傾きが少ない → 上下方向
+        if (beta > 0 && beta < 150) {
+          showResult(0); // 上側を持ち上げ → 上
+        } else if (beta < 0 && beta > -150) {
+          showResult(2); // 下側を持ち上げ → 下
+        }
+      } else if (gamma > threshold) {
+        showResult(1); // 右側を持ち上げ → 右
+      } else if (gamma < -threshold) {
+        showResult(3); // 左側を持ち上げ → 左
       }
     });
 
@@ -247,7 +256,7 @@
     let lastShake = 0;
 
     window.addEventListener('devicemotion', function(e) {
-      if (!revealed) return; // 結果表示後のみ
+      if (!revealed) return;
 
       const acc = e.accelerationIncludingGravity;
       if (!acc) return;
